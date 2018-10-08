@@ -28,6 +28,7 @@
 #include "driverlib/uart.h"
 
 #include "debug_utils/swo_segger.h"
+#include "tiva_utils/bit_manipulation.h"
 
 #define MMA8451_I2C_BASE I2C0_BASE
 #define MMA8451_I2C_PERIPH SYSCTL_PERIPH_I2C0
@@ -205,32 +206,48 @@ uint32_t mma8451ReadAccelData(void) {
 
   uint8_t accelRawData[MMA8451_BUFFER_LEN + 2] = {0};
   int32_t accelFinalData[3]                    = {0};
-  mma8451ReadRegList(MMA8451_DATA_X_MSB, accelRawData, MMA8451_BUFFER_LEN + 2);
 
-  mma8451ConvertAccelData(accelRawData, accelFinalData, 3, true);
+  uint32_t motionStatus = mma8451ReadReg(MMA8451_MOTION_SRC_ADDR);
 
-  char dataString[100] = "";
+  if (bit_get(motionStatus, 0b10)) {
+    SWO_PrintString("Found Motion Event");
+    mma8451ReadRegList(MMA8451_DATA_X_MSB, accelRawData, MMA8451_BUFFER_LEN + 2);
+    mma8451ConvertAccelData(accelRawData, accelFinalData, 3, true);
 
-  sprintf(
-      dataString, "x: %d, y: %d, z: %d\n", accelFinalData[0], accelFinalData[1], accelFinalData[2]);
-  SWO_PrintString(dataString);
+    char dataString[100] = "";
 
+    sprintf(dataString,
+            "x: %d, y: %d, z: %d\n",
+            accelFinalData[0],
+            accelFinalData[1],
+            accelFinalData[2]);
+
+    SWO_PrintString(dataString);
+  }
   return 0;
 }
 
 void mma8451Configure(void) {
   mma8451WriteReg(MMA8451_SETUP_FIFO_ADDR, MMA8451_FIFO_MOST_RECENT_MODE);
-  mma8451WriteReg(MMA8451_XYZ_CFG_ADR, MMA8451_RANGE_8G);
+  mma8451WriteReg(MMA8451_HP_FILTER_CFG_ADDR, 0);
+  mma8451WriteReg(MMA8451_XYZ_CFG_ADR, MMA8451_RANGE_2G | MMA8451_HPF_DISABLED);
+  mma8451WriteReg(MMA8451_CTRL_REG2,
+                  MMA8451_ACTIVE_MODE_SAMPL_MODE_HIGH_RES | MMA8451_SLEEP_MODE_SAMPL_MODE_LNLP);
+
+  // configure motion detection
+  mma8451WriteReg(MMA8451_MOTION_THRESHOLD_ADDR, 6U);
+  mma8451WriteReg(MMA8451_MOTION_DEBOUNCE_ADDR, 3U);
+  mma8451WriteReg(MMA8451_MOTION_CFG_ADDR,
+                  MMA8451_EVENT_LATCH_ENABLED | MMA8451_MOTION_MODE | MMA8451_X_EVENT_ENABLED |
+                      MMA8451_Y_EVENT_ENABLED);
+
+  // interrupt config
+  mma8451WriteReg(MMA8451_CTRL_REG4, MMA8451_MOTION_INT_ENABLED);
+  mma8451WriteReg(MMA8451_CTRL_REG3, MMA8451_INT_PAD_PUSH_PULL | MMA8451_INT_POLARITY_LOW);
+  mma8451WriteReg(MMA8451_CTRL_REG5, MMA8451_MOTION_INT_PIN_INT2);
 
   // changing modes should be last
-  mma8451WriteReg(MMA8451_CTRL_REG1, MMA8451_ACTIVE_MODE);
-
-  uint32_t tempBuf        = mma8451ReadReg(MMA8451_SETUP_FIFO_ADDR);
-  uint32_t errCode        = I2CMasterErr(MMA8451_I2C_BASE);
-  char     dataString[50] = "";
-
-  sprintf(dataString, "status: %d, error: %d\n", tempBuf, errCode);
-  SWO_PrintString(dataString);
+  mma8451WriteReg(MMA8451_CTRL_REG1, MMA8451_ACTIVE_MODE | MMA8451_ODR_800_HZ);
 }
 
 void mma8451Reset(void) { mma8451WriteReg(MMA8451_CTRL_REG2, 0b01000000); }

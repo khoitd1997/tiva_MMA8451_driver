@@ -6,6 +6,7 @@
         "*.svd": "xml",
         "*.hpp": "cpp",
         "uartstdio.h": "c",
-        "swo_segger.h": "c"
+        "swo_segger.h": "c",
+        "pin_map.h": "c"
     }
 }
