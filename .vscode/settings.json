@@ -7,6 +7,7 @@
         "*.hpp": "cpp",
         "uartstdio.h": "c",
         "swo_segger.h": "c",
-        "pin_map.h": "c"
+        "pin_map.h": "c",
+        "mma8451.h": "c"
     }
 }

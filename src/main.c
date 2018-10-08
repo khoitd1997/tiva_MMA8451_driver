@@ -1,4 +1,5 @@
 #include "mma8451.h"
+#include "mma8451_info.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -32,6 +33,7 @@ void motionIntHandler(void) {
   SWO_PrintString("Got the interrupt\n");
   // GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);
   mma8451ReadAccelData();
+  GPIOIntClear(GPIO_PORTD_BASE, GPIO_PIN_2);
 }
 
 int main(void) {
@@ -64,10 +66,10 @@ int main(void) {
   GPIOIntRegister(GPIO_PORTD_BASE, motionIntHandler);
   GPIOIntRegisterPin(GPIO_PORTD_BASE, GPIO_PIN_2, motionIntHandler);
   GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, GPIO_PIN_2);
-  GPIOIntTypeSet(GPIO_PORTD_BASE, GPIO_PIN_2, GPIO_LOW_LEVEL);
+  GPIOIntTypeSet(GPIO_PORTD_BASE, GPIO_PIN_2, GPIO_FALLING_EDGE);
 
   mma8451Init();
-  mma8451Reset();
+
   for (uint32_t delayIndex = 0; delayIndex < 50000; ++delayIndex) {
     // delay
   }
@@ -77,6 +79,7 @@ int main(void) {
 
   for (;;) {
     for (uint32_t delayIndex = 0; delayIndex < 50000; ++delayIndex) {
+      // mma8451ReadAccelData();
       // delay
     }
   }
