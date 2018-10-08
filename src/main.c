@@ -27,13 +27,14 @@
 #include "debug_utils/swo_segger.h"
 #include "utils/uartstdio.h"
 
-// void motionIntHandler(void);
+// use PD2 for interrupt testing
+#define MMA8451_INT_PORT GPIO_PORTF_BASE
+#define MMA8451_INT_PIN GPIO_PIN_2
 
 void motionIntHandler(void) {
   SWO_PrintString("Got the interrupt\n");
-  // GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, GPIO_PIN_2);
   mma8451ReadAccelData();
-  GPIOIntClear(GPIO_PORTD_BASE, GPIO_PIN_2);
+  GPIOIntClear(GPIO_PORTD_BASE, MMA8451_INT_PIN);
 }
 
 int main(void) {
@@ -49,10 +50,8 @@ int main(void) {
     }
   }
 
-  GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_2);
-  GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_2, 0);
-
-  // use PD2 for interrupt testing
+  GPIOPinTypeGPIOOutput(MMA8451_INT_PORT, MMA8451_INT_PIN);
+  GPIOPinWrite(MMA8451_INT_PORT, MMA8451_INT_PIN, 0);
 
   if (false == SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOD)) {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
@@ -61,12 +60,12 @@ int main(void) {
     }
   }
 
-  GPIOIntDisable(GPIO_PORTD_BASE, GPIO_PIN_2);
-  GPIOIntClear(GPIO_PORTD_BASE, GPIO_PIN_2);
+  GPIOIntDisable(GPIO_PORTD_BASE, MMA8451_INT_PIN);
+  GPIOIntClear(GPIO_PORTD_BASE, MMA8451_INT_PIN);
   GPIOIntRegister(GPIO_PORTD_BASE, motionIntHandler);
-  GPIOIntRegisterPin(GPIO_PORTD_BASE, GPIO_PIN_2, motionIntHandler);
-  GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, GPIO_PIN_2);
-  GPIOIntTypeSet(GPIO_PORTD_BASE, GPIO_PIN_2, GPIO_FALLING_EDGE);
+  GPIOIntRegisterPin(GPIO_PORTD_BASE, MMA8451_INT_PIN, motionIntHandler);
+  GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, MMA8451_INT_PIN);
+  GPIOIntTypeSet(GPIO_PORTD_BASE, MMA8451_INT_PIN, GPIO_FALLING_EDGE);
 
   mma8451Init();
 
@@ -79,7 +78,6 @@ int main(void) {
 
   for (;;) {
     for (uint32_t delayIndex = 0; delayIndex < 50000; ++delayIndex) {
-      // mma8451ReadAccelData();
       // delay
     }
   }

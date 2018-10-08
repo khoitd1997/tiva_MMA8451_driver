@@ -60,6 +60,7 @@ typedef enum {
   MMA8451_RANGE_4G = 0b01,
   MMA8451_RANGE_8G = 0b10
 } Mma8451Range;
+
 #define MMA8451_HPF_ENABLED 0b10000
 #define MMA8451_HPF_DISABLED 0b0
 

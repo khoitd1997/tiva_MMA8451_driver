@@ -212,9 +212,9 @@ uint32_t mma8451ReadAccelData(void) {
   mma8451ReadReg(MMA8451_MOTION_SRC_ADDR);  // read to clear flag
   sysStatus = mma8451ReadReg(MMA8451_SYSMOD_ADDR);
   if ((sysStatus & 0x02)) {
-    SWO_PrintString("Sleep Mode Found, not reading data");
+    SWO_PrintString("Sleep Mode Found, not reading data\n");
   } else if ((sysStatus & 0x01)) {
-    SWO_PrintString("Wake Mode Found");
+    SWO_PrintString("Wake Mode Found\n");
 
     mma8451ReadRegList(MMA8451_DATA_X_MSB, accelRawData, MMA8451_BUFFER_LEN + 2);
     mma8451ConvertAccelData(accelRawData, accelFinalData, 3, true);
@@ -263,13 +263,4 @@ void mma8451Configure(void) {
                   MMA8451_ACTIVE_MODE | MMA8451_ODR_800_HZ | MMA8451_ASLP_RATE_12_5_HZ);
 }
 
-void mma8451Reset(void) {
-  I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, false);
-  I2CMasterDataPut(MMA8451_I2C_BASE, MMA8451_CTRL_REG2);
-  I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-  mma8451WaitMaster();
-
-  I2CMasterDataPut(MMA8451_I2C_BASE, 0b01000000);
-  I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
-  mma8451WaitMaster();
-}
+void mma8451Reset(void) { mma8451WriteReg(MMA8451_CTRL_REG2, 0b01000000); }
