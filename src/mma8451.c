@@ -218,11 +218,12 @@ void mma8451Configure(const Mma8451Cfg mma8451Config) {
     }
   }
 
-  // control reg 2
+  // control reg 2 and sleep
   tempRegBuf = 0;
   if (NULL != mma8451Config.sleepCfg) {
     if ((mma8451Config.sleepCfg)->autoSleepEnabled) { tempRegBuf |= MMA8451_AUTO_SLEEP_ENABLED; }
     tempRegBuf |= (mma8451Config.sleepCfg)->sleepPwrMode;
+    mma8451WriteReg(MMA8451_ASLP_COUNT_ADDR, (mma8451Config.sleepCfg)->sleepCount);
 
     if ((mma8451Config.sleepCfg)->sleepInterruptEnabled) {
       ctrlReg4Buf |= MMA8451_WAKEUP_INT_ENABLED;
