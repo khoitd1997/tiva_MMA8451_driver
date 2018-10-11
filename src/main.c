@@ -88,7 +88,7 @@ int main(void) {
         .eventOnYEnabled    = true,
         .eventOnZEnabled    = false,
         .isDbounceClearMode = false,
-        .thresholdVal       = 8U,
+        .thresholdVal       = 30U,
         .countCriteria      = 10U,
         .interruptCfg       = &motionIntCfg,
     };
@@ -126,6 +126,7 @@ int main(void) {
     for (uint32_t delayIndex = 0; delayIndex < 50000; ++delayIndex) {
       // delay
     }
+    mma8451ReadAccelData();
   }
   return 0;
 }

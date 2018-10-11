@@ -36,6 +36,7 @@ void mma8451WriteReg(const uint8_t regAddr, const uint8_t dataToWrite) {
   I2CMasterDataPut(MMA8451_I2C_BASE, dataToWrite);
   I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
   mma8451WaitMaster();
+  mma8451WaitBus();
 }
 
 uint8_t mma8451ReadReg(const uint8_t regAddr) {
@@ -49,6 +50,7 @@ uint8_t mma8451ReadReg(const uint8_t regAddr) {
   I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, true);
   I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
   mma8451WaitMaster();
+  mma8451WaitBus();
 
   return I2CMasterDataGet(MMA8451_I2C_BASE);
 }
@@ -80,6 +82,7 @@ void mma8451ReadRegList(const uint8_t startRegAddr, uint8_t* recvData, const uin
   I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, true);
   I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
   mma8451WaitMaster();
+  mma8451WaitBus();
   recvData[dataIndex] = I2CMasterDataGet(MMA8451_I2C_BASE);
 }
 

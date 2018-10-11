@@ -143,8 +143,8 @@ typedef enum {
 
 typedef enum {
   MMA8451_STANDBY_MODE = 0,
-  MMA8451_WAKE_MODE,
-  MMA8451_SLEEP_MODE
+  MMA8451_WAKE_MODE    = 0b01,
+  MMA8451_SLEEP_MODE   = 0b10
 } Mma8451StatusSystemMode;
 
 #endif

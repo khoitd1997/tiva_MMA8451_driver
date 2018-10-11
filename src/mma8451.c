@@ -127,29 +127,30 @@ void mma8451Init(void) {
 uint32_t mma8451ReadAccelData(void) {
   mma8451WaitBus();
 
-  uint8_t  accelRawData[MMA8451_BUFFER_LEN + 2] = {0};
-  int32_t  accelFinalData[3]                    = {0};
-  uint32_t sysStatus                            = 0;
+  uint8_t accelRawData[MMA8451_BUFFER_LEN + 2] = {0};
+  int32_t accelFinalData[3]                    = {0};
 
   mma8451ReadReg(MMA8451_MOTION_SRC_ADDR);  // read to clear flag
-  sysStatus = mma8451ReadReg(MMA8451_SYSMOD_ADDR);
-  if ((sysStatus & 0x02)) {
-    SWO_PrintString("Sleep Mode Found, not reading data\n");
-  } else if ((sysStatus & 0x01)) {
-    SWO_PrintString("Wake Mode Found\n");
+  switch (mma8451GetSystemStatus()) {
+    case MMA8451_SLEEP_MODE:
+      SWO_PrintString("Sleep Mode Found, not reading data\n");
+      break;
+    case MMA8451_WAKE_MODE:
+      SWO_PrintString("Wake Mode Found\n");
 
-    mma8451ReadRegList(MMA8451_DATA_X_MSB, accelRawData, MMA8451_BUFFER_LEN + 2);
-    mma8451ConvertAccelData(accelRawData, accelFinalData, 3, true);
+      mma8451ReadRegList(MMA8451_DATA_X_MSB, accelRawData, MMA8451_BUFFER_LEN + 2);
+      mma8451ConvertAccelData(accelRawData, accelFinalData, 3, true);
 
-    char dataString[100] = "";
+      char dataString[100] = "";
 
-    sprintf(dataString,
-            "x: %d, y: %d, z: %d\n",
-            accelFinalData[0],
-            accelFinalData[1],
-            accelFinalData[2]);
+      sprintf(dataString,
+              "x: %d, y: %d, z: %d\n",
+              accelFinalData[0],
+              accelFinalData[1],
+              accelFinalData[2]);
 
-    SWO_PrintString(dataString);
+      SWO_PrintString(dataString);
+      break;
   }
   return 0;
 }
@@ -292,3 +293,9 @@ void mma8451Configure(const Mma8451Cfg mma8451Config) {
 }
 
 void mma8451Reset(void) { mma8451WriteReg(MMA8451_CTRL_REG2, 0b01000000); }
+
+void                    mma8451SelfTest(void) { mma8451WriteReg(MMA8451_CTRL_REG2, 0b010000000); }
+Mma8451StatusSystemMode mma8451GetSystemStatus(void) {
+  return (Mma8451StatusSystemMode)(0b11 & mma8451ReadReg(MMA8451_SYSMOD_ADDR));
+}
+uint32_t mm8451GetID(void) { return mma8451ReadReg(MMA8451_ID_ADDR); }
