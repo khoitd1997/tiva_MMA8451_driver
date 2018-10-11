@@ -1,5 +1,6 @@
 #include "mma8451.h"
 #include "mma8451_info.h"
+#include "mma8451_utils.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -29,85 +30,6 @@
 
 #include "debug_utils/swo_segger.h"
 #include "tiva_utils/bit_manipulation.h"
-
-#define MMA8451_I2C_BASE I2C0_BASE
-#define MMA8451_I2C_PERIPH SYSCTL_PERIPH_I2C0
-#define MMA8451_BUFFER_LEN 4
-
-#define CONV_TWO_COMPLETMENT(x) ((~(x)) + 1)
-#define SIGN_EXTEND(num, bits) (((~0) << (bits)) | (num))
-
-static void mma8451WaitMaster(void) {
-  while (I2CMasterBusy(MMA8451_I2C_BASE)) {
-    // wait until the master is not busy
-  }
-}
-
-static void mma8451WaitBus(void) {
-  while (I2CMasterBusBusy(MMA8451_I2C_BASE)) {
-    // wait until the bus is not busy
-  }
-}
-
-static void mma8451WriteReg(const uint8_t regAddr, const uint8_t dataToWrite) {
-  mma8451WaitBus();
-
-  I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, false);
-  I2CMasterDataPut(MMA8451_I2C_BASE, regAddr);
-  I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-  mma8451WaitMaster();
-
-  I2CMasterDataPut(MMA8451_I2C_BASE, dataToWrite);
-  I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
-  mma8451WaitMaster();
-}
-
-static uint8_t mma8451ReadReg(const uint8_t regAddr) {
-  mma8451WaitBus();
-
-  I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, false);
-  I2CMasterDataPut(MMA8451_I2C_BASE, regAddr);
-  I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-  mma8451WaitMaster();
-
-  I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, true);
-  I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
-  mma8451WaitMaster();
-
-  return I2CMasterDataGet(MMA8451_I2C_BASE);
-}
-
-static void mma8451ReadRegList(const uint8_t startRegAddr,
-                               uint8_t*      recvData,
-                               const uint8_t totalData) {
-  assert(NULL != recvData);
-  assert(totalData > 1);
-
-  mma8451WaitBus();
-
-  I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, false);
-  I2CMasterDataPut(MMA8451_I2C_BASE, startRegAddr);
-  I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-  mma8451WaitMaster();
-
-  I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, true);
-  I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_RECEIVE_START);
-  mma8451WaitMaster();
-  recvData[0] = I2CMasterDataGet(MMA8451_I2C_BASE);
-
-  uint8_t dataIndex = 1;
-  for (dataIndex = 1; dataIndex < totalData - 1; ++dataIndex) {
-    I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, true);
-    I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_RECEIVE_CONT);
-    mma8451WaitMaster();
-    recvData[dataIndex] = I2CMasterDataGet(MMA8451_I2C_BASE);
-  }
-
-  I2CMasterSlaveAddrSet(MMA8451_I2C_BASE, MMA8451_ADDR, true);
-  I2CMasterControl(MMA8451_I2C_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
-  mma8451WaitMaster();
-  recvData[dataIndex] = I2CMasterDataGet(MMA8451_I2C_BASE);
-}
 
 static void mma8451ConvertAccelData(uint8_t*       rawData,
                                     int32_t*       outputData,
@@ -232,7 +154,111 @@ uint32_t mma8451ReadAccelData(void) {
   return 0;
 }
 
-void mma8451Configure(void) {
+void mma8451Configure(const Mma8451Cfg mma8451Config) {
+  // some reg has their own buf since are used in multiple settings
+  uint8_t ctrlReg3Buf = 0;
+  uint8_t ctrlReg4Buf = 0;
+  uint8_t ctrlReg5Buf = 0;
+
+  uint8_t tempRegBuf = 0;
+
+  // xyz data config
+  tempRegBuf = 0;
+  tempRegBuf |= ((NULL != mma8451Config.hpfCfg) ? MMA8451_HPF_ENABLED : 0);
+  tempRegBuf |= mma8451Config.dataRange;
+  mma8451WriteReg(MMA8451_XYZ_CFG_ADR, tempRegBuf);
+
+  // hpf cutoff
+  tempRegBuf = 0;
+  if (NULL != mma8451Config.hpfCfg) { tempRegBuf |= (mma8451Config.hpfCfg)->hpfFreq; }
+  mma8451WriteReg(MMA8451_HP_FILTER_CFG_ADDR, tempRegBuf);
+
+  // fifo setup
+  tempRegBuf = 0;
+  tempRegBuf |= mma8451Config.fifoMode;
+  mma8451WriteReg(MMA8451_SETUP_FIFO_ADDR, tempRegBuf);
+
+  // offset register
+  if (NULL != mma8451Config.offsetCfg) {
+    mma8451WriteReg(MMA8451_OFFSET_X, (mma8451Config.offsetCfg)->offsetX);
+    mma8451WriteReg(MMA8451_OFFSET_Y, (mma8451Config.offsetCfg)->offsetY);
+    mma8451WriteReg(MMA8451_OFFSET_Z, (mma8451Config.offsetCfg)->offsetZ);
+  }
+
+  // motion and freefall stuffs
+  if (NULL != (mma8451Config.motionCfg)) {
+    tempRegBuf = 0;
+    tempRegBuf |=
+        (((mma8451Config.motionCfg)->eventLatchEnabled) ? MMA8451_EVENT_LATCH_ENABLED : 0);
+    tempRegBuf |= (((mma8451Config.motionCfg)->isMotionMode) ? MMA8451_MOTION_MODE : 0);
+    tempRegBuf |= (((mma8451Config.motionCfg)->eventOnXEnabled) ? MMA8451_X_EVENT_ENABLED : 0);
+    tempRegBuf |= (((mma8451Config.motionCfg)->eventOnYEnabled) ? MMA8451_Y_EVENT_ENABLED : 0);
+    tempRegBuf |= (((mma8451Config.motionCfg)->eventOnZEnabled) ? MMA8451_Z_EVENT_ENABLED : 0);
+    mma8451WriteReg(MMA8451_MOTION_CFG_ADDR, tempRegBuf);
+
+    tempRegBuf = 0;
+    tempRegBuf |= (((mma8451Config.motionCfg)->isDbounceClearMode) ? MMA8451_DBC_MODE_CLR : 0);
+    tempRegBuf |= (mma8451Config.motionCfg)->thresholdVal;
+    mma8451WriteReg(MMA8451_MOTION_THRESHOLD_ADDR, tempRegBuf);
+
+    tempRegBuf = 0;
+    tempRegBuf |= (mma8451Config.motionCfg)->countCriteria;
+    mma8451WriteReg(MMA8451_MOTION_DEBOUNCE_ADDR, tempRegBuf);
+
+    if (NULL != (mma8451Config.motionCfg)->interruptCfg) {
+      ctrlReg3Buf |= ((mma8451Config.motionCfg)->interruptCfg->canWakeupSensor
+                          ? MMA8451_MOTION_WAKEUPINT_ENABLED
+                          : 0);
+
+      // if this struct exists, assume user wants interrupt
+      ctrlReg4Buf |= MMA8451_MOTION_INT_ENABLED;
+      ctrlReg5Buf |=
+          (((mma8451Config.motionCfg)->interruptCfg)->isRoutedPin1 ? MMA8451_MOTION_INT_PIN_INT1
+                                                                   : 0);
+    }
+  }
+
+  // control reg 2
+  tempRegBuf = 0;
+  if (NULL != mma8451Config.sleepCfg) {
+    if ((mma8451Config.sleepCfg)->autoSleepEnabled) {
+      tempRegBuf |= MMA8451_AUTO_SLEEP_ENABLED;
+      tempRegBuf |= (mma8451Config.sleepCfg)->sleepPwrMode;
+    }
+    ctrlReg4Buf |=
+        ((mma8451Config.sleepCfg)->sleepInterruptEnabled) ? MMA8451_WAKEUP_INT_ENABLED : 0;
+    ctrlReg5Buf |= ((mma8451Config.sleepCfg)->isRoutedPin1) ? MMA8451_WAKEUP_INT_PIN_INT1 : 0;
+  }
+  tempRegBuf |= mma8451Config.activeMode;
+  mma8451WriteReg(MMA8451_CTRL_REG2, tempRegBuf);
+
+  // control reg 4
+  mma8451WriteReg(MMA8451_CTRL_REG4, ctrlReg4Buf);
+
+  // control reg 5
+  mma8451WriteReg(MMA8451_CTRL_REG5, ctrlReg5Buf);
+
+  // control reg 3 general interrupt
+  if (NULL != mma8451Config.generalInterruptCfg) {
+    ctrlReg3Buf |=
+        ((mma8451Config.generalInterruptCfg)->isActiveHigh ? MMA8451_INT_POLARITY_HIGH : 0);
+    ctrlReg3Buf |=
+        ((mma8451Config.generalInterruptCfg)->isOpenDrainPin ? MMA8451_INT_PAD_OPEN_DRAIN : 0);
+    ctrlReg3Buf |=
+        ((mma8451Config.generalInterruptCfg)->fifoBlocked ? MMA8451_INT_FIFO_BLOCKED : 0);
+  }
+  mma8451WriteReg(MMA8451_CTRL_REG3, ctrlReg3Buf);
+
+  // control reg1, must be the last one
+  tempRegBuf = 0;
+  if (NULL != mma8451Config.sleepCfg) { tempRegBuf |= (mma8451Config.sleepCfg)->sleepSmplFreq; }
+  tempRegBuf |= (mma8451Config.isFastReadMode ? MMA8451_FAST_READ_MODE : 0);
+  tempRegBuf |= (mma8451Config.isReducedNoiseMode ? MMA8451_REDUCED_NOISE_MODE : 0);
+  tempRegBuf |= (mma8451Config.isFullScaleActiveMode ? MMA8451_ACTIVE_MODE : 0);
+  tempRegBuf |= (mma8451Config.activeSmplFreq);
+  mma8451WriteReg(MMA8451_CTRL_REG1, tempRegBuf);
+
+  // old code
   mma8451WriteReg(MMA8451_SETUP_FIFO_ADDR, MMA8451_FIFO_MOST_RECENT_MODE);
   mma8451WriteReg(MMA8451_HP_FILTER_CFG_ADDR, 0);
   mma8451WriteReg(MMA8451_XYZ_CFG_ADR, MMA8451_RANGE_2G | MMA8451_HPF_DISABLED);
