@@ -74,7 +74,53 @@ int main(void) {
   }
   IntMasterEnable();
   GPIOIntEnable(GPIO_PORTD_BASE, GPIO_INT_PIN_2);
-  mma8451Configure();
+
+  {
+    Mma8451ModeInterruptCfg motionIntCfg = {
+        .canWakeupSensor = true,
+        .isRoutedPin1    = false,
+    };
+
+    Mma8451MotionFreefallCfg motionCfg = {
+        .eventLatchEnabled  = true,
+        .isMotionMode       = true,
+        .eventOnXEnabled    = true,
+        .eventOnYEnabled    = true,
+        .eventOnZEnabled    = false,
+        .isDbounceClearMode = false,
+        .thresholdVal       = 8U,
+        .countCriteria      = 10U,
+        .interruptCfg       = &motionIntCfg,
+    };
+
+    Mma8451GeneralInterruptCfg generalIntCfg = {
+        .isOpenDrainPin = false,
+        .isActiveHigh   = false,
+        .fifoBlocked    = false,
+    };
+
+    Mma8451SleepCfg sleepCfg = {
+        .autoSleepEnabled      = true,
+        .sleepInterruptEnabled = true,
+        .isRoutedPin1          = true,
+        .sleepCount            = 15U,
+        .sleepSmplFreq         = MMA8451_ASLP_RATE_50_HZ,
+        .sleepPwrMode          = MMA8451_SLEEP_MODE_SAMPL_MODE_NORMAL,
+    };
+
+    Mma8451Cfg mm8451Cfg = {.isReducedNoiseMode    = false,
+                            .isFastReadMode        = false,
+                            .isFullScaleActiveMode = true,
+                            .activeSmplFreq        = MMA8451_ODR_800_HZ,
+                            .activeMode            = MMA8451_ACTIVE_MODE_SAMPL_MODE_NORMAL,
+                            .dataRange             = MMA8451_RANGE_4G,
+                            .fifoMode              = MMA8451_FIFO_MOST_RECENT_MODE,
+                            .motionCfg             = &motionCfg,
+                            .sleepCfg              = &sleepCfg,
+                            .generalInterruptCfg   = &generalIntCfg};
+
+    mma8451Configure(mm8451Cfg);
+  }
 
   for (;;) {
     for (uint32_t delayIndex = 0; delayIndex < 50000; ++delayIndex) {

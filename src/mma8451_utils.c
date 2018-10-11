@@ -1,6 +1,7 @@
 #include "mma8451_utils.h"
 #include "mma8451_info.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

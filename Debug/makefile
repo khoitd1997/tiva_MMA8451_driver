@@ -26,6 +26,7 @@ ORDERED_OBJS += \
 "./Tiva_Extra/tiva_utils/pwm_utils.obj" \
 "./src/main.obj" \
 "./src/mma8451.obj" \
+"./src/mma8451_utils.obj" \
 "../tm4c123gh6pm.cmd" \
 "../Tiva_Extra/Tivaware_Dep/IQmath/ccs/IQmathLib/Debug/IQmathLib.lib" \
 "../Tiva_Extra/Tivaware_Dep/driverlib/ccs/Debug/driverlib.lib" \
@@ -197,8 +198,8 @@ tiva_MMA8451.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "tm4c123gh6pm_startup_ccs.obj" "Tiva_Extra/Tivaware_Dep/driverlib/epi_workaround_ccs.obj" "Tiva_Extra/Tivaware_Dep/drivers/buttons.obj" "Tiva_Extra/Tivaware_Dep/drivers/rgb.obj" "Tiva_Extra/Tivaware_Dep/utils/softuart.obj" "Tiva_Extra/Tivaware_Dep/utils/uartstdio.obj" "Tiva_Extra/Tivaware_Dep/utils/ustdlib.obj" "Tiva_Extra/debug_utils/swo_segger.obj" "Tiva_Extra/hardware_helper/hardware_helper.obj" "Tiva_Extra/hardware_helper/hardware_helper_adc.obj" "Tiva_Extra/hardware_helper/hardware_helper_dma.obj" "Tiva_Extra/hardware_helper/hardware_helper_gpio.obj" "Tiva_Extra/hardware_helper/hardware_helper_pwm.obj" "Tiva_Extra/tiva_utils/peripheral_utils.obj" "Tiva_Extra/tiva_utils/pin_utils.obj" "Tiva_Extra/tiva_utils/pwm_utils.obj" "src/main.obj" "src/mma8451.obj" 
-	-$(RM) "tm4c123gh6pm_startup_ccs.d" "Tiva_Extra/Tivaware_Dep/drivers/buttons.d" "Tiva_Extra/Tivaware_Dep/drivers/rgb.d" "Tiva_Extra/Tivaware_Dep/utils/softuart.d" "Tiva_Extra/Tivaware_Dep/utils/uartstdio.d" "Tiva_Extra/Tivaware_Dep/utils/ustdlib.d" "Tiva_Extra/debug_utils/swo_segger.d" "src/main.d" "src/mma8451.d" 
+	-$(RM) "tm4c123gh6pm_startup_ccs.obj" "Tiva_Extra/Tivaware_Dep/driverlib/epi_workaround_ccs.obj" "Tiva_Extra/Tivaware_Dep/drivers/buttons.obj" "Tiva_Extra/Tivaware_Dep/drivers/rgb.obj" "Tiva_Extra/Tivaware_Dep/utils/softuart.obj" "Tiva_Extra/Tivaware_Dep/utils/uartstdio.obj" "Tiva_Extra/Tivaware_Dep/utils/ustdlib.obj" "Tiva_Extra/debug_utils/swo_segger.obj" "Tiva_Extra/hardware_helper/hardware_helper.obj" "Tiva_Extra/hardware_helper/hardware_helper_adc.obj" "Tiva_Extra/hardware_helper/hardware_helper_dma.obj" "Tiva_Extra/hardware_helper/hardware_helper_gpio.obj" "Tiva_Extra/hardware_helper/hardware_helper_pwm.obj" "Tiva_Extra/tiva_utils/peripheral_utils.obj" "Tiva_Extra/tiva_utils/pin_utils.obj" "Tiva_Extra/tiva_utils/pwm_utils.obj" "src/main.obj" "src/mma8451.obj" "src/mma8451_utils.obj" 
+	-$(RM) "tm4c123gh6pm_startup_ccs.d" "Tiva_Extra/Tivaware_Dep/drivers/buttons.d" "Tiva_Extra/Tivaware_Dep/drivers/rgb.d" "Tiva_Extra/Tivaware_Dep/utils/softuart.d" "Tiva_Extra/Tivaware_Dep/utils/uartstdio.d" "Tiva_Extra/Tivaware_Dep/utils/ustdlib.d" "Tiva_Extra/debug_utils/swo_segger.d" "src/main.d" "src/mma8451.d" "src/mma8451_utils.d" 
 	-$(RM) "Tiva_Extra/hardware_helper/hardware_helper.d" "Tiva_Extra/hardware_helper/hardware_helper_adc.d" "Tiva_Extra/hardware_helper/hardware_helper_dma.d" "Tiva_Extra/hardware_helper/hardware_helper_gpio.d" "Tiva_Extra/hardware_helper/hardware_helper_pwm.d" "Tiva_Extra/tiva_utils/peripheral_utils.d" "Tiva_Extra/tiva_utils/pin_utils.d" "Tiva_Extra/tiva_utils/pwm_utils.d" 
 	-$(RM) "Tiva_Extra/Tivaware_Dep/driverlib/epi_workaround_ccs.d" 
 	-@echo 'Finished clean'
