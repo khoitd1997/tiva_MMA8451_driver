@@ -221,13 +221,13 @@ void mma8451Configure(const Mma8451Cfg mma8451Config) {
   // control reg 2
   tempRegBuf = 0;
   if (NULL != mma8451Config.sleepCfg) {
-    if ((mma8451Config.sleepCfg)->autoSleepEnabled) {
-      tempRegBuf |= MMA8451_AUTO_SLEEP_ENABLED;
-      tempRegBuf |= (mma8451Config.sleepCfg)->sleepPwrMode;
+    if ((mma8451Config.sleepCfg)->autoSleepEnabled) { tempRegBuf |= MMA8451_AUTO_SLEEP_ENABLED; }
+    tempRegBuf |= (mma8451Config.sleepCfg)->sleepPwrMode;
+
+    if ((mma8451Config.sleepCfg)->sleepInterruptEnabled) {
+      ctrlReg4Buf |= MMA8451_WAKEUP_INT_ENABLED;
+      ctrlReg5Buf |= ((mma8451Config.sleepCfg)->isRoutedPin1) ? MMA8451_WAKEUP_INT_PIN_INT1 : 0;
     }
-    ctrlReg4Buf |=
-        ((mma8451Config.sleepCfg)->sleepInterruptEnabled) ? MMA8451_WAKEUP_INT_ENABLED : 0;
-    ctrlReg5Buf |= ((mma8451Config.sleepCfg)->isRoutedPin1) ? MMA8451_WAKEUP_INT_PIN_INT1 : 0;
   }
   tempRegBuf |= mma8451Config.activeMode;
   mma8451WriteReg(MMA8451_CTRL_REG2, tempRegBuf);
