@@ -38,6 +38,7 @@ void motionIntHandler(void) {
 }
 
 int main(void) {
+  
   SysCtlClockSet(SYSCTL_SYSDIV_1 | SYSCTL_USE_OSC | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
   for (uint32_t delayIndex = 0; delayIndex < 50000; ++delayIndex) {
     // delay
